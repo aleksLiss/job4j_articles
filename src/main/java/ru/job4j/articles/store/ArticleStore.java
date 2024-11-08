@@ -6,17 +6,14 @@ import ru.job4j.articles.model.Article;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 public class ArticleStore implements Store<Article>, AutoCloseable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArticleStore.class.getSimpleName());
+    private final Logger LOGGER = LoggerFactory.getLogger(ArticleStore.class.getSimpleName());
 
     private final Properties properties;
 
@@ -44,7 +41,7 @@ public class ArticleStore implements Store<Article>, AutoCloseable {
 
     private void initScheme() {
         LOGGER.info("Инициализация таблицы статей");
-        try (var statement = connection.createStatement()) {
+        try (Statement statement = connection.createStatement()) {
             var sql = Files.readString(Path.of("db/scripts", "articles.sql"));
             statement.execute(sql);
         } catch (Exception e) {
@@ -56,11 +53,11 @@ public class ArticleStore implements Store<Article>, AutoCloseable {
     @Override
     public Article save(Article model) {
         LOGGER.info("Сохранение статьи");
-        var sql = "insert into articles(text) values(?)";
-        try (var statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        String sql = "insert into articles(text) values(?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, model.getText());
             statement.executeUpdate();
-            var key = statement.getGeneratedKeys();
+            ResultSet key = statement.getGeneratedKeys();
             while (key.next()) {
                 model.setId(key.getInt(1));
             }
@@ -74,10 +71,10 @@ public class ArticleStore implements Store<Article>, AutoCloseable {
     @Override
     public List<Article> findAll() {
         LOGGER.info("Загрузка всех статей");
-        var sql = "select * from articles";
-        var articles = new ArrayList<Article>();
-        try (var statement = connection.prepareStatement(sql)) {
-            var selection = statement.executeQuery();
+        String sql = "select * from articles";
+        List<Article> articles = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            ResultSet selection = statement.executeQuery();
             while (selection.next()) {
                 articles.add(new Article(
                         selection.getInt("id"),

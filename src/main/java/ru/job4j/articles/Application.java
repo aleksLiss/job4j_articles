@@ -16,19 +16,23 @@ public class Application {
 
     public static final int TARGET_COUNT = 1_000_000;
 
-    public static void main(String[] args) {
-        var properties = loadProperties();
-        var wordStore = new WordStore(properties);
-        var articleStore = new ArticleStore(properties);
-        var articleGenerator = new RandomArticleGenerator();
-        var articleService = new SimpleArticleService(articleGenerator);
+    public static void main(String[] args) throws Exception {
+        Properties properties = loadProperties();
+        WordStore wordStore = new WordStore(properties);
+        ArticleStore articleStore = new ArticleStore(properties);
+        RandomArticleGenerator articleGenerator = new RandomArticleGenerator();
+        SimpleArticleService articleService = new SimpleArticleService(articleGenerator);
         articleService.generate(wordStore, TARGET_COUNT, articleStore);
     }
 
     private static Properties loadProperties() {
         LOGGER.info("Загрузка настроек приложения");
-        var properties = new Properties();
-        try (InputStream in = Application.class.getClassLoader().getResourceAsStream("application.properties")) {
+        Properties properties = new Properties();
+        try (InputStream in =
+                     Application
+                             .class
+                             .getClassLoader()
+                             .getResourceAsStream("application.properties")) {
             properties.load(in);
         } catch (Exception e) {
             LOGGER.error("Не удалось загрузить настройки. { }", e.getCause());
